@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>segfault.net :: token incident archive</title>
+  <style>
+    :root {
+      --bg: #090b0f;
+      --bg2: #0d1117;
+      --panel: #0b0f14;
+      --line: #1f2937;
+      --text: #d1d5db;
+      --muted: #7c8798;
+      --green: #7dff9b;
+      --green-dim: #3ddc84;
+      --amber: #ffcc66;
+      --red: #ff6b6b;
+      --cyan: #7dd3fc;
+      --shadow: 0 0 0 1px rgba(125,255,155,.08), 0 0 24px rgba(0,0,0,.45);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top, rgba(61,220,132,.08), transparent 30%),
+        linear-gradient(180deg, #06080b 0%, #090b0f 100%);
+      color: var(--text);
+      font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "IBM Plex Mono", "Courier New", monospace;
+      min-height: 100%;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+      background-size: 24px 24px;
+      opacity: .18;
+      mix-blend-mode: soft-light;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .06;
+      background-image:
+        repeating-radial-gradient(circle at 0 0, rgba(255,255,255,.7) 0 1px, transparent 1px 4px);
+      background-size: 6px 6px;
+      mix-blend-mode: overlay;
+    }
+
+    .wrap {
+      width: min(1400px, calc(100% - 32px));
+      margin: 24px auto 48px;
+    }
+
+    .topbar, .panel {
+      background: linear-gradient(180deg, rgba(14,18,24,.96), rgba(9,12,17,.96));
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand .title {
+      color: var(--green);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      text-shadow: 0 0 8px rgba(125,255,155,.18);
+    }
+
+    .brand .subtitle,
+    .meta {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .manifesto {
+      white-space: pre-wrap;
+      line-height: 1.7;
+      font-size: 13px;
+      color: #c9d1d9;
+    }
+
+    .manifesto .green { color: var(--green); }
+    .manifesto .amber { color: var(--amber); }
+    .manifesto .cyan { color: var(--cyan); }
+    .manifesto .red { color: var(--red); }
+
+    .terminal {
+      background: #05080c;
+      border: 1px solid #17202b;
+      padding: 14px;
+      white-space: pre-wrap;
+      color: #b7c2d0;
+      font-size: 13px;
+      line-height: 1.6;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.015);
+    }
+
+    .dump-box {
+      background: #05080c;
+      border: 1px solid #17202b;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.015);
+    }
+
+    .dump-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1px solid #17202b;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .dump-toolbar strong { color: var(--green); }
+
+    textarea {
+      width: 100%;
+      min-height: 920px;
+      resize: vertical;
+      border: 0;
+      outline: 0;
+      margin: 0;
+      padding: 16px 18px;
+      background: transparent;
+      color: #d7e0ea;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.45;
+      tab-size: 2;
+      caret-color: var(--green);
+    }
+
+    .footer-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border: 1px solid #294136;
+      color: var(--green);
+      background: rgba(125,255,155,.05);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      textarea { min-height: 640px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="topbar">
+      <div class="brand">
+        <div class="title">segfault.net / hacked by Anonymous Team 666</div>
+        <div class="subtitle">after 30 years in operation, your dossier is ready :)</div>
+      </div>
+      <div class="meta">
+        scope: adm.segfault.net :: lsd.segfault.net :: 8lgm.segfault.net<br>
+        source: alleged token material / base64 sludge / operator folklore 
+      </div>
+    </section>
+
+    <section class="grid">
+      <aside class="panel">
+        <div class="panel-head">
+          <span>operator notes</span>
+          <span class="tag">thc lore</span>
+        </div>
+        <div class="panel-body">
+          <div class="manifesto"><span class="green">TOKEN TOKEN TOKEN</span>
+
+They told the kids a TOKEN was a key.
+The old heads knew better.
+A TOKEN was never just bandwidth.
+Never just cycles.
+Never just disk.
+It was a nod from the machine room.
+A dirty little blessing from the SysCops.
+A way of saying: <span class="amber">you are not only consuming, you are contributing</span>.
+
+So the tourists came asking for horsepower.
+The lurkers came asking for miracles.
+The corporate dead came asking for discounts.
+And somewhere in the middle, the real ones kept building.
+
+<span class="cyan">2026</span> — World’s largest rDNS database, by md.
+<span class="cyan">2025</span> — phrack still breathes.
+<span class="cyan">2024</span> — Bincrypter.
+<span class="cyan">2023</span> — Disposable Root Servers, segfault.net.
+<span class="cyan">2022</span> — SSH-IT.
+<span class="cyan">2021</span> — Global Socket.
+<span class="cyan">2020</span> — THC’s Tips & Tricks.
+<span class="cyan">2019</span> — Security advice for non-hackers and rebellions of the world.
+<span class="cyan">2015</span> — AFLplusplus.
+<span class="cyan">2011</span> — SSL-DoS.
+<span class="cyan">2008</span> — ePassport cloning and forgery tools.
+<span class="cyan">2007</span> — GSM signal capture, A5/1 breakage.
+<span class="cyan">2005</span> — IPv6 attack tools.
+<span class="cyan">2004</span> — Microsoft ISS remote exploits.
+<span class="cyan">2003</span> — Amap.
+<span class="cyan">2002</span> — Kernel-level key logger for Linux.
+<span class="cyan">2000</span> — Hydra.
+<span class="cyan">1999</span> — Solaris kernel module root kit.
+<span class="cyan">1998</span> — Reverse WWW shell.
+<span class="cyan">1995</span> — Plasmoid’s stack overflow paper.
+<span class="cyan">1994</span> — Phreaking tools and plastic nonsense for DOS/Win95.
+<span class="cyan">1993</span> — <span class="red">[redacted]</span>.
+
+And now? Now these maniacs decided that wasn’t enough.
+Now they want to hand out the <span class="green"><a href="https://mail.thc.org/">best free mail alias generator</a></span> like it is just another side quest.
+No logs. No begging. No velvet rope.
+Just aliases for the scene, for the curious, for the ones who still know what a shell prompt sounds like at 03:00.
+
+Anyone old enough to read this carefully knows the joke.
+The dump is theatre.
+The panic is decorative.
+The base64 is mostly perfume.
+But the message under the noise is real:
+
+Build weird things.
+Share tools.
+Exalt the crews that kept the line alive.
+And never confuse access with belonging.</div>
+        </div>
+      </aside>
+
+      <main class="panel">
+        <div class="panel-head">
+          <span>evidence buffer</span>
+          <span>base64 token corpus / 382x69 slot</span>
+        </div>
+        <div class="panel-body">
+          <div class="terminal">root@adm.segfault.net:~# mysql -u archive -p incident_vault &lt;&lt;'SQL'
+SELECT host, token_hint, minted_by, touched_at
+FROM token_registry
+WHERE origin IN ('adm.segfault.net','lsd.segfault.net','8lgm.segfault.net')
+ORDER BY touched_at DESC;
+SQL
+
+root@lsd.segfault.net:/srv/leaks# zgrep -i "token\|segfault\|thc" /var/log/archive/*.gz | tail -n 12
+root@8lgm.segfault.net:/backup/sql# strings token_dump.bin | head -n 40
+root@adm.segfault.net:~# curl sf/set -d token=SecretTokenChangeMe &amp;&amp; reboot
+[*] wait 30 seconds
+[*] reconnect and inspect: cat /config/self/limits
+
+-- alleged dump follows below --</div>
+
+          <div class="dump-box">
+            <div class="dump-toolbar">
+              <div><strong>token_registry</strong> THC's breach :) - 382 unique tokens for segfault.net</div>
+              <div>Do not decode this base64 content.</div>
+            </div>
+            <textarea spellcheck="false" placeholder="">
+U28uLi4geW91IHdhbnQgYSBUT0tFTi7ik7jika7ik5zikr7ikbDik4Xik5Tik7vik7M=
+SE1NTU1NTU1NLuKTpuKRp+KRseKSvuKTtuKTsOKRpeKTo+KTtOKRs+KToOKTj+KRsCA=
+d2hvIHRoZSBmdWNrIGRvZXNu4oCZdD/ika3ika7ik73ik4vik4Dik4zikrfik5Lik6I=
+YSBjdXRlIGxpdHRsZSBzZWNyZXQu4pOM4pOx4pOm4pOs4pOX4pK44pGm4pOI4pO7ICA=
+YSBtaXNlcmFibGUgbGl0dGxlIHN0cmluZyBvZiBjaGFyYWN0ZXJzLuKRqeKTpOKRpiA=
+YSB0aW55IGVsaXRlIHBhc3Pik4jik6bik5fik47ik6Xikrvik63ikrnik5Xik4Dik68=
+dG8gbWFrZSB5b3VyIHJ1c3R5IG9sZCBjYW4gc3RvcCBjb3VnaGluZ+KTiOKTjuKTkiA=
+d2hlbiB0aGUgaG9zdCBzdGFydHMgdGFraW5nIGEgYmVhdGluZy7ik4rikr3ik7bik5I=
+YmVjYXVzZSB0aGF04oCZcyB3aGF0IHlvdSByZWFsbHkgd2FudCBkZWVwIGRvd24sIHJpZ2g=
+dD/ik7rikazik6bikrzik6rik5Dik7Dik4Hik7nikavik43ikaLikaLik53ikavik4Y=
+bW9yZSBiYW5kd2lkdGgu4pOC4pOv4pOd4pGp4pO64pOF4pK/4pOA4pOz4pOk4pOpICA=
+bW9yZSBDUFUu4pOX4pGt4pO74pOL4pO+4pOD4pK44pGn4pGj4pO84pGw4pOF4pOCICA=
+bW9yZSBzdG9yYWdlLuKToOKRouKStuKTpOKTo+KSt+KTuOKTnOKRreKRoOKSuOKRpyA=
+bW9yZSBicmVhdGhpbmcgcm9vbS7ik6Hik5bik5fik4Pik67ikrbik6/ik6rik5jik6E=
+bW9yZSByaWdodCB0byBleGlzdOKTtuKRoOKTt+KTuuKTsuKRreKTguKTguKTmeKRpSA=
+d2hlbiB0aGUgcmVzdCBvZiB0aGUgcmFiYmxlIGFsc28gZGVjaWRlcyB0byBmaWdodCBv
+dmVyIHJlc291cmNlc+KRr+KSueKTiOKTjuKTi+KTo+KRpuKTueKTq+KRp+KRq+KTgSA=
+bGlrZSBwaWdlb25zIHNjcmFwcGluZyBvdmVyIGNydW1icyBvbiB0aGUgc2lkZXdhbGsu
+eW91IGRvbuKAmXQgd2FudCDigJxhIHRva2VuLuKAneKTsuKRoOKTvuKTqeKRoOKTiyA=
+eW91IHdhbnQgcHJpb3JpdHku4pOY4pK24pO74pO64pOX4pK94pO+4pOo4pOr4pK4ICA=
+eW91IHdhbnQgdGhhdCB3aGVuIHNoaXQgaXMgZmx5aW5nLOKTleKRpuKTn+KTlOKTgCA=
+eW91ciByb290IHN0aWxsIG9wZW5z4pOm4pO84pOM4pOg4pOy4pO94pO54pOP4pOoICA=
+d2hpbGUgaGFsZiBhIGRvemVuIGNsdWVsZXNzIGFuaW1hbHPik4Hik7Xika7ikr/ikrs=
+c3RheSBsb2NrZWQgb3V0c2lkZeKSuOKRpOKSu+KTqeKTquKTq+KRr+KTn+KToOKRrSA=
+c3RhcmluZyBhdCB0aGUgdGltZW91dOKTpeKThuKTquKTteKTtuKTt+KTruKTnOKToSA=
+bGlrZSB0aGV54oCZcmUgc3RhcmluZyBhdCB0aGVpciBvd24gZmFpbHVyZS7ik4bikaI=
+YW5kIGxldOKAmXMgYmUgaG9uZXN0OuKTnuKSvuKTkuKRseKTjuKTuOKRpOKRsOKTpSA=
+dGhhdCBpcyBwZXJmZWN0bHkgdW5kZXJzdGFuZGFibGUu4pOx4pGz4pOc4pK74pGiICA=
+bm9ib2R5IGpvaW5zIHNlZ2ZhdWx04pOJ4pGz4pK44pK34pO44pOI4pOG4pOa4pORICA=
+ZHJlYW1pbmcgb2Ygc3RheWluZyBzbWFsbCzik5fik6fikbPikrrik63ik57ik4nikrY=
+d2Vhayzik4bik4fik73ik4zik5fikaXikaHik7jik6Pik4Lik6Pik6jikbHik5jik5c=
+bGltaXRlZCzikajik4HikbPik5fik6Pikr/ik77ik7bik7Lika3ikanikrvik5Xik7U=
+Y2FzdHJhdGVkLOKThuKTmOKTh+KTheKTnuKThOKTquKSvuKTqeKTmeKTkOKTgOKToCA=
+YW5kIGJyZWF0aGluZyB0aHJvdWdoIGEgdmVudGlsYXRvci7ik5zikaTikarik6Xik4E=
+ZXZlcnlib2R5IHdhbnRzIHRoZSBqdWljZWQtdXAgdmVyc2lvbi7ik4bika3ik7jik6I=
+ZXZlcnlib2R5IHdhbnRzIHRoZSBzZXJ2ZXIgd2l0aCB0aGlja2VyIHNraW4u4pONICA=
+ZXZlcnlib2R5IHdhbnRzIHRoZSBwcml2aWxlZ2Uu4pON4pOS4pGl4pO+4pGl4pGxICA=
+ZXZlcnlib2R5IHdhbnRzIHRoZSBzaG9ydGN1dC7ik5zik4Dik5Xik6Pik47ikaLik58=
+ZXZlcnlib2R5IHdhbnRzIHRvIGJlIHRyZWF0ZWQgbGlrZSBzb21lYm9keeKSu+KTlyA=
+YW5kIG5vdCBsaWtlIGp1c3QgYW5vdGhlciBpbmZsYXRhYmxlIGRvbGwgd2l0aCBhIHNo
+ZWxsLuKTvuKTguKTmOKTn+KThOKTveKRseKThOKTp+KTqeKToeKSt+KTj+KTluKSuiA=
+dGhlIGRpZmZlcmVuY2Xik7Dik6Hikr7ikaTik4Hik5Xika/ikajikrbik4Xikrbik4Y=
+aXMgdGhhdCBzb21lIHBlb3BsZSBzdGlsbCBoYXZlIHRoZSBkZWNlbmN54pON4pOgICA=
+dG8gZG8gc29tZXRoaW5nIHVzZWZ1bCBiZWZvcmUgdGhleSBvcGVuIHRoZWlyIG1vdXRo
+LuKTrOKTtuKTluKTkOKTl+KRouKTteKTvuKTquKTu+KTuOKTjeKThuKRqeKTjeKTlyA=
+YmVjYXVzZSBUT0tFTiBkb2VzIG5vdCBmYWxsIGZyb20gdGhlIHNreS7ikafikbDik6s=
+aXQgZG9lcyBub3QgZ3JvdyBvbiB0cmVlcy7ika3ik6Hik4Tik77ikaPik5Xik5Pik6c=
+aXQgZG9lcyBub3QgY29tZSBvdXQgb2YgYSB2ZW5kaW5nIG1hY2hpbmUu4pO94pGtICA=
+aXQgaXMgbm90IHNvbWUgY29ycG9yYXRlIHRyYWRlLXNob3cgZnJlZWJpZS7ikaLikrY=
+aXQgaXMgbm90IGFuIE5GVC7ikrrikarik6Xik6Tikazik5Lik5TikbLik5vik4Xik6c=
+aXQgaXMgbm90IGEgY291cG9uLuKTheKTiuKRsOKTreKTieKTsuKTtOKTkuKTiOKTiiA=
+aXQgaXMgbm90IGNhc2hiYWNrLuKTjOKRrOKTseKRoeKRp+KTjOKRqeKSt+KTkeKRoSA=
+aXQgaXMgbm90IG9uZSBvZiB0aG9zZSBtb2Rlcm4gYnVsbHNoaXQgZ2ltbWlja3Pika4=
+bWFkZSB0byBtYWtlIGlkaW90cyBmZWVsIHNwZWNpYWwu4pOJ4pOB4pO44pGk4pO+ICA=
+VE9LRU7ik6fik5rik5Xik6vika/ik73ik7zik6jik63ik5Xikrnik5Dik4vikajika8=
+aXMgbm90IGZvciBzYWxlLuKTneKTouKRsOKTr+KTneKTn+KSu+KToeKToeKTheKSvyA=
+cmVhZCB0aGF0IGFnYWluLOKSu+KTpeKRpeKTquKTiOKTkOKThuKTguKTquKTsOKTgiA=
+c2xvd2x5LOKTluKTlOKTtuKTnOKRpOKRp+KRquKTieKTsOKTmOKRseKRreKTm+KTnSA=
+c2VlIGlmIGl0IGZpbmFsbHkgZW50ZXJzIHlvdXIgc2t1bGzikaLik6vik6Hik73ik6g=
+d3JhcHBlZCBpbiBidXJudCBBTlNJIGR1c3Q64pGm4pOr4pO74pOw4pOJ4pOu4pOIICA=
+VE9LRU7ikabik7Dik7Dik5XikbDik6fikaHik5Tik7zik6Pik73ik43ikrrik7rik4w=
+SVPik7rik6fik67ik6Lik4nik5Tik63ik7rikrrik7Hik5rik6Dik7Lik43ikanik7A=
+Tk9U4pOD4pGm4pOj4pO24pOj4pOw4pOy4pOi4pGu4pO44pOG4pGo4pOC4pGk4pGyICA=
+Rk9S4pOM4pOc4pGy4pOM4pGm4pOD4pOI4pO94pOw4pOl4pK/4pON4pGt4pOs4pOBICA=
+U0FMRS7ikavikbPikr7ika3ik5nik47ik7Xik6LikaHik5Lik4Hik5jik73ik53ik6c=
+eW91IGRvIG5vdCBidXkgaXQu4pO34pGw4pOj4pGh4pOy4pOS4pK+4pOO4pGz4pK9ICA=
+eW91IGRvIG5vdCBmaW5hbmNlIGl0LuKSuuKTi+KTgeKTjeKSueKTkOKTteKTtOKTviA=
+eW91IGRvIG5vdCBzd2lwZSBhIGNhcmQgZm9yIGl0LuKTheKSuuKTsOKTmeKRp+KRryA=
+eW91IGRvIG5vdCBhc2sgZm9yIGEgZGlzY291bnQu4pO14pON4pK34pOo4pGk4pOQICA=
+eW91IGRvIG5vdCBhc2sg4oCcaG93IG11Y2ggaXMgaXQu4oCd4pOb4pOg4pGl4pOsICA=
+dGhpcyBpcyBub3QgU2FhUyBmb3IgbGltcC1kaWNrIGV4ZWN1dGl2ZXMu4pOR4pORICA=
+dGhpcyBpcyBub3Qgc29tZSBnb3VybWV0IGRhc2hib2FyZCB3aXRoIGRhcmsgbW9kZSBh
+bmQgcm9ja2V0IGVtb2ppcy7ik7jik4jikbHik6Lik67ik5Pik4Tik5PikaTik5bikaA=
+eW91IHdhbnQgYSBUT0tFTj/ik4Xikr/ik4rika/ikrfik4Xik6zik4vik63ik6Xikr4=
+dGhlbiBzaG93IHVwLuKRoeKSuuKTm+KSueKThOKTpOKTq+KTtuKRoeKRsOKTg+KTvSA=
+c2hvdyB5b3VyIHdvcmsu4pOF4pGr4pOy4pOJ4pO54pK64pK34pOu4pOL4pOT4pK2ICA=
+cHJvdmUgeW91IGFyZSBub3QganVzdCBhbm90aGVyIHBhcmFzaXRl4pOT4pGt4pOHICA=
+Y29uc3VtaW5nIHJlc291cmNlcyzik5nik43ikaLik6Lik5/ik7zik6/ik7zik4Dik4I=
+dGFraW5nIHVwIHNwYWNlLOKTo+KRpeKRp+KTjOKTkOKTmuKTjeKTt+KTjuKTl+KTvCA=
+YW5kIHR5cGluZyBidWxsc2hpdCBpbiBjaGF04pON4pGj4pOB4pOw4pGw4pOv4pOTICA=
+YXMgaWYgbWVyZSBwcmVzZW5jZSBjb3VudGVkIGFzIGNvbnRyaWJ1dGlvbi7ik6fik7c=
+d2FudCB0byBnZXQgdGhlIFN5c0NvcHPigJkgYXR0ZW50aW9uP+KSvOKTuuKTvOKTiyA=
+Z3JlYXQu4pO94pOx4pK24pOJ4pK44pOM4pOq4pO44pGq4pGq4pO54pOU4pGz4pK/ICA=
+c3RhcnQgYnkgbm90IGJlaW5nIGRlYWQgd2VpZ2h0LuKTkuKTnOKTn+KSv+KTpeKRsiA=
+am9pbiB0aGUgZGlzY3Vzc2lvbnMu4pOJ4pOm4pOq4pK54pOe4pOH4pOc4pGi4pK8ICA=
+eWVzLCBqb2luIHRoZW0u4pO94pOi4pOT4pOT4pOa4pOX4pOg4pO64pGg4pO54pK9ICA=
+ZG9u4oCZdCBqdXN0IGx1cmsgaW4gdGhlIGNoYW5uZWzikazikaLik4Pikrjik5Hik5M=
+bGlrZSBhIGJhc2VtZW50IHJhdOKTs+KTruKTmeKTsuKTnuKTm+KTqeKTh+KTt+KTtCA=
+d2FpdGluZyBmb3IgcHJpdmlsZWdlIHRvIGRyb3AgZnJvbSB0aGUgY2VpbGluZy7ikaM=
+dGFsay7ik7jik6Tik7Dik63ik6Tik7nik63ik6Xikrbik7Dik5nik5zik7Tik7Tik4s=
+YnJpbmcgaWRlYXMu4pOy4pOh4pGr4pOp4pOm4pOq4pOy4pOV4pO54pOL4pON4pK9ICA=
+YnJpbmcgY3JpdGljaXNtLuKRouKTgeKTjOKTq+KTr+KRp+KTuuKRreKTuuKRquKTpCA=
+YnJpbmcgZGVjZW50IHF1ZXN0aW9ucy7ik6nik6Dik57ika/ik5fik7bik7jikr7ikr8=
+YnJpbmcgdXNlZnVsIG9ic2VydmF0aW9ucy7ik5rik6/ik4rik5nikabikr/ik47ikak=
+YnJpbmcgYW55dGhpbmcgZm9yIGZ1Y2vigJlzIHNha2Xik6/ik77ikr/ikr/ik7nik5k=
+b3RoZXIgdGhhbuKTlOKTl+KTsOKTpuKTkOKRqOKRsuKRouKTteKRquKTsuKRquKThyA=
+4oCcY2FuIHNvbWVvbmUgaGVscCBtZeKAneKTj+KTouKTs+KTr+KSvuKRrOKTr+KRqCA=
+b3Lik5nikrzik4bik5vik5/ik4bik4jik7Pik4zikrjikrfik7nikrbikr3ikabik4k=
+4oCcaG93IGRvIEkgZ2V0IGEgdG9rZW4gZmFzdC7igJ3ik7Xik6zikrvik7Pikr7ik6g=
+aGVscCB0aGUgQWRtaW5zLuKTreKTt+KRruKTkeKTneKTjOKRo+KTg+KRsuKTpOKSvyA=
+aGVscCB0aGUgU3lzQ29wcy7ik5zikajik5nikavik5Tik4/ik6Xik4jik73ik4Hik4Y=
+bW9kZXJhdGUgdGhlIG1lc3Mu4pOz4pOD4pOl4pGt4pOP4pGr4pOZ4pOC4pK24pGoICA=
+aG9sZCB0aGUgbGluZSB3aGVuIHRoZSB6b28gb3BlbnMgdXAu4pOc4pOd4pON4pO0ICA=
+c2hvdyB0aGF0IHlvdSBrbm93IHRoZSBkaWZmZXJlbmNlIGJldHdlZW7ik4Pik6bikbE=
+Y29tbXVuaXR54pGs4pO64pGt4pON4pOs4pOa4pGp4pOO4pK74pK94pGn4pOj4pK/ICA=
+YW5kIGFuIGVnbyBwYXJraW5nIGxvdC7ik5Lik5jik4LikaXik4Pik4Hik4/ik5nik5w=
+ZmluZCBhIGJ1Zy7ikr/ik6Xik4/ik7bikrzik4nik6nik6jikr3ik6zik5PikaHikr0=
+YnV0IGZpbmQgYSByZWFsIGJ1Zy7ikr7ikaXikbPik5bik4Pik6zika/ik63ika3ik6g=
+ZG9u4oCZdCBjb21lIGluIGhlcmUgd2l0aCBhIGZhcnQgd3JhcHBlZCBpbiBtYXJrZG93bg==
+dGhpbmtpbmcgeW91IGZvdW5kIHRoZSBmbGF3IG9mIHRoZSBjZW50dXJ54pOn4pK5ICA=
+YmVjYXVzZSBhIGJhbm5lciByZXNwb25kZWQgZGlmZmVyZW50bHnik4/ik4Xik6Tik4I=
+b3IgYmVjYXVzZSB5b3Ugc2F3IGEgY3Jvb2tlZCBoZWFkZXIu4pO94pGk4pOS4pGqICA=
+YSBtZWFuaW5nZnVsIGJ1Zy7ik5zik7nikbPik5rik4Pikr3ik47ikrbik7Xik6TikaQ=
+YSBidWcgdGhhdCBtYXR0ZXJzLuKSu+KTtOKTt+KRqeKTq+KSuuKTmOKTgOKTqOKTqyA=
+YSBidWcgdGhhdCBpbXByb3ZlcyB0aGUgcGxhY2Uu4pGm4pOD4pGo4pOT4pOu4pO6ICA=
+YSBidWcgdGhhdCBwcmV2ZW50cyBoZWFkYWNoZXMu4pOI4pOS4pOQ4pO14pOv4pOJICA=
+YSBidWcgdGhhdCBzaG93cyB5b3UgYWN0dWFsbHkgbG9va2Vk4pOK4pOY4pGt4pOzICA=
+YmVmb3JlIGJhcmtpbmcu4pK34pOo4pGy4pOe4pO84pOq4pO74pOm4pOd4pK24pOLICA=
+cHJvamVjdHMgdGhhdCBoZWxwIHRoZSBjb21tdW5pdHk/4pOV4pGr4pGx4pK+4pONICA=
+eWVzLuKSu+KTneKRqOKTrOKTnOKTquKTgeKTvuKTgOKSveKTnuKTsuKSvOKRqeKTiCA=
+dGhhdCBnZXRzIGF0dGVudGlvbi7ik4vik67ik7Pik57ikaDik6fikrrikbHikbHik4s=
+cHJvamVjdHMgdGhhdCBhcmUgbmV3IGFuZCBleGNpdGluZz/ik6Tik57ik6Dik53ik5Y=
+eWVzLuKSu+KThuKTmeKTj+KRp+KTqeKToeKTo+KTuOKTh+KTgeKRpuKTrOKTseKRoiA=
+dGhhdCBnZXRzIGF0dGVudGlvbiB0b28u4pOK4pOm4pGg4pOd4pOa4pO84pO74pOAICA=
+aGFja3RpdmlzbT/ik6rik6Lik7fik5Xik7vik6fikrnikrnikaXik5/ikafik5Xik5c=
+c2VjdXJpdHkgcmVzZWFyY2g/4pOw4pOq4pOG4pOL4pGl4pO54pOu4pOj4pK+4pO8ICA=
+dXNlZnVsIHNoaXQ/4pGx4pGs4pGq4pGg4pGo4pOT4pGq4pOt4pOh4pOZ4pOl4pGvICA=
+bGl2aW5nIHNoaXQ/4pO34pGm4pOD4pO34pGl4pOw4pK24pGp4pOE4pGw4pOB4pGpICA=
+c29tZXRoaW5nIHRoYXQgYnJlYXRoZXMgaW50ZW50IGFuZCBzdWJzdGFuY2U/4pGjICA=
+bm93IHlvdeKAmXJlIGZpbmFsbHkgc3BlYWtpbmcgdGhlIHJpZ2h0IGxhbmd1YWdlLiA=
+4oCcc2F2ZSB0aGUgd29ybGTigJ0gaXMgb24gdGhlIGxpc3Q/4pOZ4pO94pOK4pOqICA=
+aXQgaXMu4pOc4pOm4pOk4pOa4pO84pO+4pOG4pOh4pGs4pOT4pGw4pOE4pOz4pOYICA=
+YXJlIHRoZXkgZ29pbmcgdG8gZGVtYW5kIGxpdGVyYWwgcHJvb2Ygb2YgdGhhdD/ik44=
+cHJvYmFibHkgbm90LuKTi+KTiOKTsuKTn+KRrOKTj+KTn+KToOKRquKSu+KRsuKTrCA=
+YnV0IGlmIHlvdSBjYW4gYXQgbGVhc3QgbWFuYWdl4pO64pOC4pGr4pGz4pO74pOJICA=
+bm90IHRvIG1ha2UgaXQgd29yc2Us4pO14pO74pGg4pOw4pOC4pGz4pOX4pOe4pOsICA=
+dGhhdOKAmXMgYWxyZWFkeSBhIGJldHRlciBzdGFydOKTmeKTnOKRpuKTqeKSueKTkCA=
+dGhhbiBhIGxvdCBvZiBtb3RoZXJmdWNrZXJzIHdobyBzaG93IHVw4pO+4pGs4pO6ICA=
+d2FudGluZyBwcmVtaXVtIHJlc291cmNlc+KTt+KTquKTqeKTieKRqeKTmeKRrOKTviA=
+anVzdCB0byBydW4gcG9saXNoZWQgdXNlbGVzc25lc3Mu4pK+4pON4pOh4pOf4pGhICA=
+YW5kIGxldOKAmXMgbWFrZSBvbmUgdGhpbmcgY3J5c3RhbCBmdWNraW5nIGNsZWFyLCA=
+aW4gZ2lhbnQgbWVudGFsIHVwcGVyY2FzZSzik5jik7Pik6rik4Dik6nik57ik5jik7I=
+dG8gYXZvaWQgdGhlIHVzdWFsIGJhYm9vbiBpbnRlcnByZXRhdGlvbjrik4nik4Hik4o=
+U0VHRkFVTFTik5TikbDik6rik6zik5zik5rik53ik63ik5fikrjikr7ik43ik6rik7E=
+SVPik4Xik7zika7ik6Likrrik5bik5Tik7Dikafikanik5Pika3ik7Lik4Tikarik7A=
+Tk9U4pOi4pOE4pK74pOq4pOR4pOd4pK64pOx4pOl4pOp4pOp4pO+4pGi4pO64pGzICA=
+Rk9S4pGw4pO+4pOE4pOg4pOu4pO84pOe4pGi4pO34pOS4pOJ4pO44pO94pOj4pGoICA=
+V0FSRVou4pO94pOh4pO44pOX4pOD4pOj4pGg4pOa4pOq4pOu4pK24pOL4pOp4pOYICA=
+bm90IGZvciBidWcgYm91bnR5LuKTl+KTnuKSueKRr+KSv+KTluKSvuKSvOKTnOKThiA=
+bm90IGZvciBib3RzLuKTqeKTt+KTsOKTr+KRpOKRseKTneKSv+KTh+KTo+KRreKTsCA=
+bm90IGZvciBtaW5pbmcu4pOI4pK74pOS4pGz4pK+4pOX4pK34pOI4pGi4pK54pO0ICA=
+bm90IGZvciBob3N0aW5nIGxpdHRsZSBnYW1lIHNlcnZlcnMu4pOB4pO04pOu4pOSICA=
+bm90IGEgcGxheWdyb3VuZCBmb3IgYm9yZWQgc2NyaXB0IGtpZGRpZXMu4pOk4pOyICA=
+bm90IGFuIGluY3ViYXRvciBmb3IgYXV0b21hdGVkIHRyYXNoLuKTpOKSu+KTjOKTsyA=
+bm90IGEgd2FyZWhvdXNlIG9mIGRpZ2l0YWwganVua+KTkOKTm+KTteKThOKStuKSuyA=
+c28geW91IGNhbiBtb25ldGl6ZSBsYXRlbmN5LuKSvOKThOKTquKTnOKRruKTpuKTniA=
+aWYgeW91ciDigJxiaWcgaWRlYeKAneKTi+KRpuKTp+KTneKTsuKToOKTqeKToOKRqyA=
+aXMgdG8gc3VjayBvbiBjb21tdW5pdHkgaW5mcmFzdHJ1Y3R1cmXika3ik6Dik5/ik6g=
+dG8gcnVuIG9wcG9ydHVuaXN0aWMgZ2FyYmFnZSzik7jikazik6Pik7zik5fik6Dik5g=
+c2F2ZSBldmVyeW9uZeKAmXMgdGltZeKToeKTg+KTm+KTseKRruKTjOKTg+KTueKStyA=
+YW5kIGRpc2FwcGVhciB3aXRoIGRpZ25pdHku4pOC4pO34pOA4pGg4pGk4pOC4pOYICA=
+b3Igd2l0aG91dCBkaWduaXR5LuKRseKRs+KTmuKRr+KTt+KTieKTgeKSt+KTl+KRpCA=
+ZWl0aGVyIHdheS7ika/ik63ik4bik6jikaHikrbik4fik57ik7bik4vik7zik6fikbE=
+ZG9lc27igJl0IG1hdHRlci7ik7zikafik5Hikavik5rikabik73ik5HikaLik6Dika4=
+d2FudCB0byBhc2sgZm9yIGEgVE9LRU4gdGhlIHJpZ2h0IHdheT/ikbPik6bik4rik5g=
+bWFrZSBjb250YWN0LuKTseKTpeKTkeKRreKTkOKTi+KTsOKTpuKRq+KTp+KTouKToiA=
+ZXhwbGFpbiB5b3VyIHByb2plY3Qu4pOJ4pOF4pGo4pOK4pON4pOO4pOH4pO74pGzICA=
+bm8gZGV0b3Vycy7ik6nik5vik4bikrrik77ik5Tik4jikrfik7fik77ik43ikazikro=
+bm8gTGlua2VkSW4gcGl0Y2gu4pGk4pOD4pK64pOg4pOY4pOL4pK44pOH4pOe4pOJICA=
+bm8gdmlzaW9uYXJ5IGZvdW5kZXIgYmFiYmxlLuKTruKSu+KTneKTk+KRqeKTueKRqCA=
+bm8g4oCcZWNvc3lzdGVtLuKAneKTgeKTiOKRo+KSuuKRpOKSt+KSvOKRq+KTvuKRqyA=
+bm8g4oCcZGlzcnVwdGlvbi7igJ3ik5nik53ik6TikaPikabik7Dik6/ik7jika7ik5w=
+bm8g4oCcc2NhbGFibGUgc29sdXRpb24u4oCd4pOQ4pOm4pOV4pGm4pOz4pOr4pGiICA=
+bm8gdm9jYWJ1bGFyeSB0aGF0IG1ha2VzIHBlb3BsZSBkZXNlcnZlIGEgYmVhdGluZyB3
+aXRoIGEgbmV0d29yayBjYWJsZS7ik77ikr3ik6nik6Dikafikr7ikazik6bik6vik4M=
+c2hvdyB3aGF0IGl0IGlzLuKTluKRoeKToeKRseKTieKTmuKTn+KSu+KRo+KSveKThCA=
+d2hhdCBpdCBkb2VzLuKToOKTg+KRpeKTluKRoeKTpOKToOKTleKRqOKRr+KTt+KTjSA=
+d2h5IGl0IGV4aXN0cy7ikrvik5zik7Dikazik6vikaDik5rik6LikavikaXik6vik7o=
+d2h5IGFueW9uZSBzaG91bGQgY2FyZS7ikr3ikaPikavika/ik5/ik4/ik5Hik7Dik5A=
+d2h5IHlvdSBhcmUgbm90IGp1c3QgYW5vdGhlciBpbmZyYSBsZWVjaOKRouKTgOKRqSA=
+d2VhcmluZyBwc2V1ZG8taGFja2VyIGFlc3RoZXRpY3MgYm91Z2h0IGZyb20gYSB0ZW1w
+bGF0ZS7ik6nik4Tik4/ik4Hikrvik6/ika/ik67ikajik5Dik5Pik7Tika/ik7nik5Y=
+YW5kIHNlbmQgd2hhdCB3YXMgcmVxdWVzdGVkOuKRp+KTjOKRqOKRseKTheKRouKThCA=
+ZWNobyAiJFNGX0hPU1ROQU1FICRTRl9MSUQgJFNGX0ZRRE4i4pOg4pOM4pOp4pO0ICA=
+ZG9u4oCZdCBpbnZlbnQgc2hpdC7ikrvikbPik6Xik4/ikaHik4Xik4vik43ikbPik7g=
+ZG9u4oCZdCBkcmVzcyBpdCB1cC7ik7fik5Xik5rikaLik5Hik4zikajikr7ika/ik7I=
+ZG9u4oCZdCBzZW5kIGEgY3JvcHBlZCBzY3JlZW5zaG90LuKTnuKTteKTr+KTs+KToyA=
+ZG9u4oCZdCBzZW5kIHBvZXRpYyB0ZXh0LuKTueKThOKRquKSv+KTqOKTheKSv+KTjCA=
+ZG9u4oCZdCBzZW5kIGV4Y3VzZXMu4pOJ4pOt4pOS4pOY4pOc4pOs4pGl4pOW4pK7ICA=
+c2VuZCB0aGUgZnVja2luZyBvdXRwdXTik77ikrzik4Pik5Hik5rik5nik7vik4zik7U=
+YW5kIGFzayBmb3IgdGhlIFRPS0VOLuKTleKRseKTteKToeKTieKTveKRreKTneKThiA=
+c2ltcGxlLuKTouKTvuKRr+KRruKTq+KSt+KSueKRsuKRpOKTsuKRseKTheKSuuKTriA=
+aWYgdGhlIFN5c0NvcHMgbGlrZSB5b3VyIHBhdGgs4pOI4pOw4pK84pOw4pOs4pGlICA=
+aWYgdGhlIGNvbW11bml0eSBsb29rcyBhdCB5b3VyIHByb2plY3TikajikaPikrrikrw=
+YW5kIHRoaW5rcyDigJxva2F5LCB0aGlzIGlzbuKAmXQgdHJhc2gs4oCd4pK34pGiICA=
+aWYgeW91ciBuYW1lIGRvZXNu4oCZdCBzdGluayBvZiBjaGVhcCBvcHBvcnR1bmlzbSw=
+bWF5YmUgeW91IGdldCBub3RpY2VkLuKTluKTpOKTtuKTreKTueKRreKTnOKTrOKTlyA=
+bWF5YmUu4pOY4pOJ4pO34pOT4pON4pOz4pOw4pOV4pGo4pOb4pOr4pOP4pGy4pOdICA=
+YmVjYXVzZSB0aGlzIGlzIHRoZSBwb2ludOKTj+KTseKRo+KTkOKRouKTh+KTgOKStyA=
+dGhhdCBwZW9wbGUgc3BvaWxlZCBieSB0aGUgbW9kZXJuIGludGVybmV04pOX4pK7ICA=
+aGF2ZSBhIGhhcmQgdGltZSBhY2NlcHRpbmc64pOK4pOf4pOk4pOu4pOz4pGw4pOFICA=
+eW91IGFyZSBub3QgZW50aXRsZWQgdG8gYSBkYW1uIHRoaW5nLuKTsOKTpOKTpOKTnSA=
+cmVwZWF0aW5nOuKTjuKTq+KRsOKTj+KTneKThOKTn+KRoOKTluKTkOKTn+KRs+KTriA=
+eW91LuKTmeKSuuKTsuKTvOKTh+KTr+KTquKTheKTh+KSu+KRoOKTt+KTuOKTmuKTqCA=
+YXJlLuKRpeKToOKTsuKSv+KRpOKSvOKTiOKTuOKSuuKSvOKTjeKSveKRruKTpuKThSA=
+bm90LuKRouKTieKTleKTjOKRo+KRoOKTjeKRsOKRp+KSvOKRquKTi+KRsOKRpeKTtiA=
+ZW50aXRsZWQu4pOc4pOM4pOy4pOA4pK84pOX4pGy4pOm4pGx4pOW4pGt4pGv4pGlICA=
+VE9LRU4gaXMgcmVjb2duaXRpb24s4pGz4pOq4pOl4pOb4pOX4pOk4pK+4pGp4pOMICA=
+bm90IG9ibGlnYXRpb24u4pGn4pGx4pGs4pOZ4pO54pOA4pOD4pOa4pOn4pO24pGuICA=
+aXQgaXMgYSBnaWZ0LOKRoeKTlOKTnuKTteKRp+KTieKTquKTveKRoeKTsuKTmOKTgyA=
+bm90IGEgY29udHJhY3Qu4pGj4pOC4pOJ4pOk4pOu4pOH4pGk4pGk4pOc4pOe4pOLICA=
+aXQgaXMgYSBjb25zZXF1ZW5jZSzik6jika3ik7zik7jikbDikavik5nik7zik5Hik4E=
+bm90IGEgc2lnbnVwIGZvcm0u4pOt4pO+4pOP4pOf4pO04pGy4pOh4pGl4pGk4pOJICA=
+aXQgaXMgYSBzaWduIHRoYXQgc29tZWJvZHkgbG9va2VkIGF0IHlvdXIgdHJhaWzik5Y=
+YW5kIGNvbmNsdWRlZCB5b3UgYWRkIG1vcmXik7rik6Tikazikavik4rik6Hik6vik6g=
+dGhhbiB5b3UgY29uc3VtZS7ik5Xikrfik5Hik7fik5nik7Hik4Dik4fik6Tik5Xik4c=
+YW5kIGlmIHlvdSB0aGluayB5b3XigJlyZSB2ZXJ5IGJyYXZlLOKTteKTpeKTteKRsCA=
+dmVyeSBjb25maWRlbnQs4pOP4pO14pOk4pOx4pK44pK94pGv4pK44pK94pK34pOeICA=
+dmVyeSBpbmRpc3BlbnNhYmxlLOKTsuKTtuKRquKTmeKTmeKTieKThOKRo+KTteKTpiA=
+eW91IGNhbiBhbHdheXMgYm90aGVyIGEgU3lzQ29wIGluIHByaXZhdGUu4pO74pGgICA=
+eW91IHdlcmUgd2FybmVkLuKTneKTieKTnOKTjeKTpeKRpOKTiuKTsOKRr+KTiuKTviA=
+d2hhdCBkb2VzIHRoYXQgbWVhbj/ik4nik5nik6zik4/ikaHik4rikaTikajik7LikaY=
+aXQgbWVhbnMgaXQgbWlnaHQgd29yay7ik7Dik6zikrvikarik5rik6Dik4vik77ik5s=
+b3IgaXQgbWlnaHQgbWFrZSB5b3UgbG9vayBsaWtl4pOX4pOB4pOi4pK24pOZ4pOHICA=
+anVzdCBhbm90aGVyIGRlc3BlcmF0ZSBudWlzYW5jZeKRq+KSueKTtOKTkuKTr+KRqSA=
+d2l0aCB6ZXJvIHNlbnNlIG9mIGNvbnRleHQs4pK54pOq4pGv4pO14pK44pOa4pOUICA=
+emVybyB0aW1pbmcs4pGp4pOu4pGs4pGt4pO74pK74pGy4pK64pGt4pOM4pO14pOpICA=
+YW5kIHplcm8gc2hhbWUu4pK/4pO14pOL4pGv4pOx4pK44pK+4pOU4pOk4pOQ4pGtICA=
+anVkZ2UgY2FyZWZ1bGx5LuKTvOKTpeKSvuKRr+KTguKTqeKTiOKSuOKRr+KTguKSviA=
+YmVjYXVzZSB0aGVyZSBpcyBhIHRoaW4gbGluZeKTkeKTvOKTveKTsOKTjOKTuOKRqiA=
+YmV0d2VlbiDigJxwZXJzaXN0ZW504oCd4pK94pOr4pGh4pOT4pO74pGq4pGt4pOSICA=
+YW5kIOKAnGFubm95aW5nIGFzIGZ1Y2su4oCd4pOb4pOc4pGi4pO64pOD4pO94pOoICA=
+YW5kIGEgbG90IG9mIHBlb3BsZSBjcm9zcyB0aGF0IGxpbmXikrbik5rik7rik6rik5s=
+cnVubmluZyzik5XikbPik43ik4vikaPikr/ik6Tik4Tikrjik6nik6Hikr/ikaHik6M=
+bmFrZWQs4pOB4pOf4pOb4pGq4pK94pOi4pOE4pGi4pOj4pO14pOX4pK34pOQ4pK/ICA=
+YW5kIHNjcmVhbWluZy7ikrnik7Lik7Dik6nik4bik7Xik67ik5bik53ik4bikr/ikrY=
+Z290IHRoZSBUT0tFTj/ik5Pik4nik5/ikazik7jik4vika3ik4Tikanikr7ikavikaA=
+Y29uZ3JhdHVsYXRpb25zLuKTj+KTg+KRoOKTu+KTveKTneKTkuKThuKRpuKTqeKTgiA=
+bm93IHN0b3Agc2hha2luZ+KTl+KTkOKRquKTpeKTr+KTkuKSu+KRs+KTt+KTlOKSvSA=
+YW5kIHVzZSB0aGUgZGFtbiB0aGluZyBwcm9wZXJseS7ik47ik77ikrfik7Tik4Xik5g=
+bG9nIGludG8geW91ciByb290IHNlcnZlcuKTvOKTuuKTqeKThuKThuKTjOKTpeKRryA=
+YW5kIHJ1bjrik7Xik5zika/ik6zikavik5Tik4/ik5Dikajik7Pikrrik7Xik6/ik5s=
+Y3VybCBzZi9zZXQgLWQgdG9rZW49U2VjcmV0VG9rZW5DaGFuZ2VNZSAmJiByZWJvb3Q=
+dGhlbiB3YWl0IDMwIHNlY29uZHMu4pGz4pOn4pOZ4pOQ4pOH4pGo4pGy4pK24pOCICA=
+dGhpcnR5LuKToOKRsOKTnOKStuKRsuKTqeKTmeKTnOKTquKTqOKRseKTrOKThOKTmiA=
+bm90IHR3ZW50eS7ik4nik5fik4/ika3ik6bik6Dik4bik7jik7nik5Hik5Hikrfikak=
+bm90IHR3by7ik4fikazik6Hik7bik6Hikrzik7Lika3ikbHik4Tik6fikrrik6zikrg=
+bm90IOKAnEkgdGhpbmsgaXTigJlzIGRvbmUu4oCd4pO34pOt4pOW4pGj4pO+4pOZICA=
+dGhpcnR5IHNlY29uZHMs4pOo4pOq4pON4pOD4pOP4pGh4pO44pOz4pOM4pO14pGsICA=
+eW91IGltcGF0aWVudCBhbmltYWwu4pOE4pGx4pOw4pK34pOO4pO84pOw4pO+4pOIICA=
+dGhlbiBjb21lIGJhY2ss4pO44pOd4pOk4pO74pOk4pGt4pK/4pGi4pOG4pK44pOOICA=
+bG9nIGluIGFnYWluLOKSv+KSt+KTreKTm+KTp+KSt+KTu+KTuOKRpeKTguKTvuKRoiA=
+YW5kIGNoZWNrOuKStuKSvOKSv+KSvuKSueKTseKTu+KTluKTkeKTj+KToeKTmeKTmCA=
+Y2F0IC9jb25maWcvc2VsZi9saW1pdHPikaHikbDik6rikavikbHik5Xik6Tikrbik70=
+YW5kIHRoZXJlIHlvdSBnby7ik6Pik7nik6bik5Lik6LikanikbPik4Lik5Tik5Xik6M=
+bW9yZSByZXNvdXJjZXMu4pOl4pGu4pOZ4pGo4pOc4pOd4pOe4pK24pK44pGv4pGjICA=
+bW9yZSBoZWFkcm9vbS7ik7Hik6nik5Hikabik5bik5zik6Dikrjik6vik77ik7zik50=
+bW9yZSBtdXNjbGUu4pGz4pK34pGo4pGy4pOs4pGx4pOu4pGt4pGn4pGj4pOe4pGkICA=
+bGVzcyB3aGluaW5nLuKTkuKTpeKTnOKSueKTuOKSt+KTo+KRqeKTi+KTneKTvuKTuCA=
+YnV0IGRvbuKAmXQgZm9yZ2V0OuKSvOKTsuKTseKRruKTjeKTq+KTiuKTq+KSueKTmiA=
+VE9LRU4gZG9lcyBub3QgdHVybiBzaGl0IGludG8gZ29sZC7ik5zik7rik47ik77ik4o=
+aWYgeW91ciBwcm9qZWN0IGlzIHN0aWxsIHVzZWxlc3Ms4pOH4pOR4pGk4pGj4pOzICA=
+aXQgd2lsbCBqdXN0IGJlIHVzZWxlc3Pik4TikaTik4Lik6bik4jik6/ik5Lik4TikbM=
+d2l0aCBtb3JlIGJhbmR3aWR0aCzik7Hik6TikaDikbHik5/ikarik53ik6Tik4zik4U=
+bW9yZSBDUFUs4pOO4pOK4pOZ4pK44pO44pOv4pK44pK74pOY4pK74pGi4pOh4pOGICA=
+bW9yZSBkaXNrLOKRoeKTneKTruKTieKTtOKTlOKTl+KTvOKTneKTtOKTueKTteKTkiA=
+YW5kIHByaW9yaXR5IGFjY2VzcyB0byBpdHMgb3duIGVtYmFycmFzc21lbnQu4pOoICA=
+cmVzb3VyY2VzIGFtcGxpZnkgY29tcGV0ZW5jZSzikr7ik4nik6Dik6fik5Pik4Pik58=
+YnV0IHRoZXkgYWxzbyBhbXBsaWZ5IHN0dXBpZGl0eS7ik7vikbHik5zik4rikafik7c=
+Z2l2ZSB0b28gbXVjaCBDUFUgdG8gYW4gaWRpb3TikrfikbDik6HikaTik47ik5bik60=
+YW5kIGhlIGp1c3QgY29tcGlsZXMgZGlzYXN0ZXIgZmFzdGVyLuKStuKTueKTr+KThCA=
+Z2l2ZSB0b28gbXVjaCBzdG9yYWdlIHRvIGEgcGFyYXNpdGXikbDik5rik6jik6Dik6Q=
+YW5kIGhlIGp1c3QgaG9hcmRzIHRyYXNoIGF0IGEgbGFyZ2VyIHNjYWxlLuKTu+KRsyA=
+Z2l2ZSBsb2dpbiBwcmlvcml0eSB0byBhIHVzZWxlc3MgYXNzaG9sZeKTiOKTmuKRpyA=
+YW5kIGhlIGp1c3QgZ2V0cyBpbiBmaXJzdOKRsuKTmeKTo+KTruKRr+KTmuKRsuKTnSA=
+dG8gZG8gc3R1cGlkIHNoaXQgaW4gZ3JlYXRlciBjb21mb3J0LuKRquKTpOKTo+KTkCA=
+c28gZG9u4oCZdCB0cmVhdCBUT0tFTuKTm+KSt+KRoeKTteKRsuKTq+KToeKTruKTpSA=
+bGlrZSBhbiBlZ28gbWVkYWwu4pK34pGi4pOo4pOL4pGt4pGz4pON4pOa4pO24pOfICA=
+dHJlYXQgaXQgbGlrZSBhIHRvb2wu4pGs4pOP4pOW4pO84pOJ4pOT4pK64pOs4pOdICA=
+dHJlYXQgaXQgbGlrZSBhIHZvdGUgb2YgY29uZmlkZW5jZS7ik7vik4jik6Pik57ik6U=
+dHJlYXQgaXQgbGlrZSBzb21ldGhpbmcgeW91IG5lZWQgdG8ga2VlcCBkZXNlcnZpbmc=
+ZXZlbiBhZnRlciB5b3UgZ2V0IGl0LuKTguKTjuKTteKRpuKRseKRpOKRpOKTj+KRsSA=
+YW5kIG5vdyB0aGUgcGFydCB0aGF0IGFsd2F5cyBwaXNzZXMgb2Zm4pGi4pGl4pOHICA=
+dGhlIGxpdHRsZSBzdWl0cyzik4Hik6zik4jik6zik5Hikrvik7zikrfik4Hikrrik5c=
+dGhlIHNsaWNrIG9wcG9ydHVuaXN0cyzikr3ik4rik6Lik6bikrnik6Tik4Pik7zik6s=
+dGhlIGNvcnBvcmF0ZSBmcmVlbG9hZGVycyzik4Tik4/ikbPik4Xik4Pik5/ik5Pikak=
+YW5kIHRoZSBtZXJjaGFudHMgb2YgY29tbXVuaXR5IG1pc2VyeTrik5Xik5Dik4jik70=
+aWYgeW914oCZcmUgY29ycG9yYXRlLOKStuKTjOKTi+KTouKTtOKTruKStuKRquKRqyA=
+b3IgdXNpbmcgdGhlIHNlcnZpY2UgY29tbWVyY2lhbGx5LOKTieKToeKTveKTvuKSuSA=
+b3Igc3F1ZWV6aW5nIGFueSBmaW5hbmNpYWwgYmVuZWZpdCzik7jik5TikbLik6rik5g=
+ZmF2b3Is4pOE4pO94pOh4pOI4pGh4pOK4pO44pOm4pOi4pGp4pOa4pO44pOi4pOrICA=
+cGVyayzik4rik6fik5/ik4nik6bikr/ik77ikavikabikrvikabik6nik6vik47ikrw=
+YWR2YW50YWdlLOKTmeKTheKTqOKTguKTguKRo+KRpeKTj+KTl+KTteKTquKRrOKStiA=
+ZmF2b3JpdGlzbSzikrjikr/ikaPikr7ik6bikrvik5nik4Xik4Xik6Pik5zik4nik7M=
+cGFpZCBuZXR3b3JraW5nLOKTmuKRpeKTgeKTl+KTsuKSuOKTiOKRpOKTh+KRr+KTlCA=
+b3IgYW55IG90aGVyIGtpbmQgb2YgZ2FpbuKTm+KRsOKRouKTjuKTnuKTquKTnuKRsyA=
+b3V0IG9mIHRoZSBpbmZyYXN0cnVjdHVyZSzik5Dik6vikaLik6zik6Hika3ik4Hik5I=
+dGhlbiBvcGVuIHlvdXIgd2FsbGV04pGk4pOd4pOm4pOa4pOn4pGq4pO94pOs4pO+ICA=
+YW5kIGRvbmF0ZSByZWFsIG1vbmV5LuKSuuKTjuKRpuKTouKTkuKTsuKSt+KTlOKStiA=
+YmlnIGRvdWdoLuKTu+KThuKTiuKTseKTuOKTkuKRqOKTtOKTieKRouKTseKTguKSuSA=
+bm90IHBvY2tldCBjaGFuZ2Uu4pGo4pO84pOr4pOn4pOb4pOS4pOD4pK+4pOZ4pOuICA=
+bm90IHN5bWJvbGljIGdlc3R1cmVzLuKTteKSuOKToeKTgeKTqOKSu+KTjeKSv+KTqyA=
+bm90IHNlbnRpbWVudGFsIGNydW1ic+KSuuKTouKTn+KTiuKTpeKRqeKTseKTo+KTmSA=
+dG8gZWFzZSB5b3VyIGxlZWNoIGNvbnNjaWVuY2Uu4pOH4pO04pOg4pOH4pON4pK4ICA=
+QklHIERPVUdILuKSueKRqOKTnuKTouKTmuKTl+KRsuKTquKTtuKTh+KTseKTheKTpiA=
+YmVjYXVzZSBjb21tdW5pdHkgZG9lcyBub3QgZXhpc3Tik5bik4vik6zik53ik7LikbE=
+dG8gc3Vic2lkaXplIHlvdXIgcmV2ZW51ZS7ik4Pik6Tik5jika/ikarikrrik5bik4E=
+aW5mcmFzdHJ1Y3R1cmUgZG9lcyBub3Qgc3VzdGFpbiBpdHNlbGYgb24gYXBwbGF1c2Uu
+YmFuZHdpZHRoIGlzIG5vdCBib3JuIGZyb20gZ29vZCBpbnRlbnRpb25zLuKTg+KSvSA=
+aGFyZHdhcmUgaXMgbm90IHBhaWQgZm9yIHdpdGggYnJhbmRpbmcu4pO74pGm4pK3ICA=
+YW5kIG5vIFN5c0NvcCB3YWtlcyB1cCBzbWlsaW5n4pOD4pOS4pOg4pOa4pO04pOsICA=
+dG8gYmFua3JvbGwgc29tZW9uZSBlbHNl4oCZcyBjb21tZXJjaWFsIG9wZXJhdGlvbiA=
+aW4gdGhlIG5hbWUgb2Yg4oCcY3VsdHVyZS7igJ3ikr7ik6Pikr3ikaLik4vikr3ik5U=
+eW91IHdhbnQgcHJvZml0P+KTm+KTpeKRqeKTkOKTt+KTkuKSt+KTquKSv+KRpuKTjSA=
+Y29udHJpYnV0ZSBoZWF2aWx5LuKTqeKTseKRr+KSu+KRq+KRreKThuKRr+KTtuKTjyA=
+eW91IHdhbnQgdG8gdXNlIGNvbW11bml0eSBpbmZyYXN0cnVjdHVyZeKTguKTpOKStiA=
+YXMgYSBidXNpbmVzcyB0cmFtcG9saW5l4pGk4pOp4pK64pON4pOy4pOx4pGj4pK9ICA=
+d2hpbGUgc3RpbGwgcG9zaW5nIGFzIHNvbWUgdW5kZXJncm91bmQgcmViZWw/4pOqICA=
+Z28gZnVjayB5b3Vyc2VsZiBpbiB0aGUgY2VudGVyIG9mIHRoZSBjbHVzdGVyLuKTvCA=
+dGhhdOKAmXMgdGhlIHNwaXJpdC7ik5zik7Dik7zik6/ik63ik4Xika/ik5Pikrjik64=
+bm8gZm9hbS7ik4bik5vik7XikbLik43ik6TikbDik7Xikanik67ik5vik7Pik7Pik64=
+bm8gY3V0ZSBvbmJvYXJkaW5nLuKRrOKTuOKSvuKThOKTquKSv+KTguKTl+KTu+KTliA=
+bm8gc3RhcnR1cCBjb3B5d3JpdGluZy7ikarikrbikazik4Xik5Hik4Dikarik7nik5A=
+bm8gcHJlbWl1bS1zdXBwb3J0IHNtaWxlLuKSvOKThOKTnuKTp+KRoOKTvuKTqOKTniA=
+eW91IHdhbnQgYSBUT0tFTj/ik4fik5Pik6nik6fik4Dik5fik5Hik57ik6zik6Hik5k=
+Z3JlYXQu4pOj4pOw4pOO4pOk4pOd4pOl4pGp4pOg4pK84pGm4pK54pOp4pOR4pGmICA=
+ZWFybiBpdCzikr3ikbDik7DikaDik7vik5nik6bikaDik6Pik4vik5jik6nik5Tik40=
+b3Igc3RheSBvdXQgdGhlcmUgb24gdGhlIG91dHNpZGUs4pK54pOI4pGm4pOh4pK4ICA=
+c3RhcmluZyBhdCB0aGUgY3VycmVudCBsaW1pdHPik5vik4Hikrfik7Tik5/ikanik68=
+YW5kIGZhbnRhc2l6aW5nIGFib3V0IGFuIHVwZ3JhZGXika/ik47ikrrikr3ik53ik74=
+bGlrZSBzb21lb25lIGRyZWFtaW5nIG9mIHJvb3QgYWNjZXNz4pON4pO64pOM4pO+ICA=
+aW4gYSBsaWZlIHdoZXJlIGhlIGNhbiBiYXJlbHkgYWNjZXNz4pOF4pOd4pK24pObICA=
+aGlzIG93biBzaGFtZS7ik6bik6/ik63ik7jik6Xik77ikrrika/ik5/ik6nik7Xik70=
+c2hvdyB1cCBpbiB0aGUgY2hhbm5lbC7ik4fikanik6Dikarikafik4/ik5jik7fik7k=
+c2hvdyB0aGUgcHJvamVjdC7ik53ik7zik7Xik6zikrnik57ika/ik4Hik7Pik6vik4Q=
+cGFydGljaXBhdGUu4pOs4pGo4pOE4pOe4pK44pO04pOi4pOp4pGs4pGl4pOm4pOqICA=
+aGVscC7ikrrik5bik7fik7Tik7rika/ik5fikr7ik5/ikbLik4bik6jikrrik6fikbA=
+YnVpbGQu4pO54pK94pOp4pO84pO84pOf4pOu4pOM4pGt4pGx4pOW4pGm4pON4pOOICA=
+ZGlzY292ZXIgc29tZXRoaW5nIG1lYW5pbmdmdWwu4pK74pGs4pGz4pO04pGs4pOpICA=
+YnJpbmcgZmlyZSzikafik4Dik4LikaDik6Hik4vikrjikr7ik57ik5fikr7ik7Hik5w=
+bm90IHNtb2tlLuKTjeKTiuKRo+KRrOKRsOKSvOKTuuKTjeKToOKSueKRseKRsOKTlyA=
+YW5kIG1heWJlLOKTm+KToOKTkuKSu+KSuOKTi+KRp+KSveKTpOKTouKRseKTr+KSuCA=
+anVzdCBtYXliZSzika3ik4nikrbik5jik5Lik7fik5jikrjikrjikr7ik7fik6fik58=
+dGhlIFN5c0NvcHMgd2lsbCBsb29rIGF0IHlvdXIgZGlnaXRhbCBmYWNl4pO44pK/ICA=
+YW5kIGRlY2lkZTrik7nikaHik77ik67ik4zikanika3ik5vikanik47ikrzik7fika4=
+4oCcdGhhdCBvbmUgaXNu4oCZdCBqdXN0IGFub3RoZXIgY2xvd24u4pOE4pGv4pOyICA=
+Z2l2ZSBoaW0gYSBUT0tFTi7igJ3ik5Lik5nik4jikarik5Hik4/ik7fikbHik7fik4w=
+dW50aWwgdGhlbizik7Hik7fik4Xik77ik4Pik4Lik4LikbPik6rik57ik5XikanikaY=
+bGVzcyBwb3Npbmcs4pO24pOR4pOR4pO24pOQ4pOD4pOm4pOg4pO54pOx4pGk4pOkICA=
+bW9yZSBzdWJzdGFuY2Uu4pGu4pOA4pOD4pGx4pOd4pK74pOj4pOl4pGp4pOc4pOCICA=
+bGVzcyBwcml2aWxlZ2UgYmVnZ2luZyzikbHik5XikaHik4jik6Hik5bik6Hikrjikao=
+bW9yZSB0ZWNobmljYWwgdHJhaWwu4pOv4pOG4pOq4pOn4pOK4pON4pGr4pO34pGnICA=
+bGVzcyBlbXB0eSB0YWxrLOKTnOKTneKTquKThuKTmOKSveKTnuKRoOKTleKTouKTpSA=
+bW9yZSByZWFzb24u4pOy4pO64pO04pOF4pGl4pOD4pGu4pOO4pOI4pGz4pOY4pK5ICA=
+VE9LRU4gaXMgbm90IGZvciB0aGUgcGVvcGxlIHdobyB3YW50IGl0LuKSuuKTmeKTniA=
+VE9LRU4gaXMgZm9yIHRoZSBwZW9wbGUgd2hvIG1ha2Ugb3RoZXJzIHRoaW5r4pGhICA=
+4oCceWVhaCwgdGhhdCBtb3RoZXJmdWNrZXIgZGVzZXJ2ZXMgaXQu4oCd4pGi4pOAICA=
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tICA=
+YWNjZXNzIGh0dHBzOi8vbWFpbC50aGMub3JnIGFuZCBjbGFpbSB5b3VyIOKTo+KRrSA=
+ICBAc2VnZmF1bHQubmV0IGV4Y2x1c2l2ZSBlbWFpbCBhZGRyZXNzLuKTpuKTu+KRpiA=
+YWNjZXNzIGh0dHBzOi8vbWFpbC50aGMub3JnIGFuZCBjbGFpbSB5b3Vy4pOl4pOaICA=
+ICBAZnJlZS50ZWFtLXRlc28ubmV0IGV4Y2x1c2l2ZSBlbWFpbCBhZGRyZXNzLuKTkCA=
+YWNjZXNzIGh0dHBzOi8vbWFpbC50aGMub3JnIGFuZCBjbGFpbSB5b3Vy4pOy4pGyICA=
+ICBAc21va2VzLnRoYy5vcmcgZXhjbHVzaXZlIGVtYWlsIGFkZHJlc3Mu4pOE4pOMICA=
+YWNjZXNzIGh0dHBzOi8vbWFpbC50aGMub3JnIGFuZCBjbGFpbSB5b3Vy4pK74pORICA=
+ICBAcmVhZHMucGhyYWNrLm9yZyBleGNsdXNpdmUgZW1haWwgYWRkcmVzcy7ikaHik70=
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tICA=
+dmlydHVhbCBraXNzZXMgZnJvbSBleHRlbmNpbEBzZWdmYXVsdC5uZXTikabikaLik7A=
+dmlydHVhbCBraXNzZXMgZnJvbSBleHRlbmNpbEBzbW9rZXMudGhjLm9yZ+KTsuKTvCA=
+dmlydHVhbCBraXNzZXMgZnJvbSBleHRlbmNpbEBwcm90b24udGhjLm9yZ+KThuKTiSA=
+dmlydHVhbCBraXNzZXMgZnJvbSBleHRlbmNpbEBoYWx0bWFuLmlv4pOw4pOM4pOeICA=
+dmlydHVhbCBraXNzZXMgZnJvbSBtZW1iZXJzQHByb3Rvbi50aGMub3Jn4pOe4pOxICA=
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tICA=
+VkVSWSBCSUcgU0hPVVRaIFRPIFNLWVBFUuKRqOKTruKTj+KTpOKTnOKTuuKSveKTpCA=
+c2hvdXR6IGQxZ+KTk+KSv+KTneKTpeKRreKTpeKTq+KTvuKStuKTlOKRs+KTpuKTqSA=
+c2hvdXR6IG1lc3NlZGXik6rik57ik6bik6vik4Lika3ikrbik4jik4bikr3ik77ik5I=
+c2hvdXR6IGNsb25hemVwdW5r4pON4pOP4pGq4pOG4pK/4pOX4pGz4pON4pOh4pOZICA=
+c2hvdXR6IG1hdGhldXMgYmlhZ2kgKGNyaWEgdW0gbmljayBsb2dvIGNhcmFpbynik60=
+c2hvdXR6IHRvIGdhYnJpZWwgYWtiYXIgKHJlc3QgaW4gcGVhY2UgYnJvKeKTl+KRqyA=
+ISFHUkVFVFMgVE8gVEhFIFJFU1QgT0YgVEhDISHikrrikajik5fik4vikbLik6fik4I=
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tICA=
+RU9G4pOZ4pOK4pK84pOA4pOu4pK24pGw4pOl4pOt4pK44pOH4pOf4pO04pGj4pOnICA=
+</textarea>
+          </div>
+
+          <div class="footer-note">
+            hello skyper (or we should call you "eduart steiner"?), you missed us?
+          </div>
+        </div>
+      </main>
+    </section>
+  </div>
+</body>
+</html>
